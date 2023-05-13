@@ -7,3 +7,9 @@
 /.vs
 /bin/Debug
 /obj
+/HandlerTests/bin/Debug
+/HandlerTests/obj/Debug
+/Messages/bin/Debug
+/Messages/google/protobuf
+/Messages/obj/Debug
+/packages

@@ -1,57 +1,55 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
+using System.IO;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace Server
 {
     internal class Client
     {
-        private int _id;
 
         private TcpClient _client;
 
-        private INetworkReader _networkReader;
+        public CancellationTokenSource Token { get; } = new CancellationTokenSource();
 
-        public CancellationTokenSource token { get; } = new CancellationTokenSource();
+        public int Id { get; set; } = -1;
 
-        public int Id => _id;
-
-        public Client(TcpClient client, int id, INetworkReader networkReader)
+        public Client(TcpClient client)
         {
             _client = client;
-            _id = id;  
-            _networkReader = networkReader;
         }
 
-        public void Read()
+        public byte[] Read()
         {
-            using (var stream = _client.GetStream())
+            byte[] readBuffer = new byte[8192];
+            try
             {
-                while (!token.IsCancellationRequested)
-                {
-                    try
-                    {
-                        _networkReader.Read(stream);
-                    }
-                    catch (SocketException)
-                    {
-                        Disconnect();
-                    }
-               
+                _client.GetStream().Read(readBuffer, 0, readBuffer.Length);
+                return readBuffer;
+            }
+            catch (IOException e)
+            {
+                if (e.InnerException is SocketException socketException)
+                { 
+                    Console.WriteLine($"Client ID {Id} disconnected");
+                    Disconnect();
                 }
+                else
+                {
+                    throw;
+                }
+                return readBuffer;
             }
         }
 
         public void Disconnect()
-        {            
-            token?.Cancel();
+        {
+            Token?.Cancel();
             if (_client.Connected)
-            _client.Close();
-            token.Dispose();
+            {
+                _client.Close();
+            }
+            Token?.Dispose();
         }
     }
 }

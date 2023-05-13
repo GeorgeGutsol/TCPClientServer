@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestClient", "TestClient\Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server.csproj", "{4E18FAE7-566D-4ABC-AE1D-2F36DC10FF90}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messages", "Messages\Messages.csproj", "{36EA779C-2313-4572-A760-0A5DF73C2170}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HandlerTests", "HandlerTests\HandlerTests.csproj", "{9550ACD0-AE97-43A4-88CC-2E6EDAD0BA6B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{4E18FAE7-566D-4ABC-AE1D-2F36DC10FF90}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4E18FAE7-566D-4ABC-AE1D-2F36DC10FF90}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4E18FAE7-566D-4ABC-AE1D-2F36DC10FF90}.Release|Any CPU.Build.0 = Release|Any CPU
+		{36EA779C-2313-4572-A760-0A5DF73C2170}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36EA779C-2313-4572-A760-0A5DF73C2170}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36EA779C-2313-4572-A760-0A5DF73C2170}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36EA779C-2313-4572-A760-0A5DF73C2170}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9550ACD0-AE97-43A4-88CC-2E6EDAD0BA6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9550ACD0-AE97-43A4-88CC-2E6EDAD0BA6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9550ACD0-AE97-43A4-88CC-2E6EDAD0BA6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9550ACD0-AE97-43A4-88CC-2E6EDAD0BA6B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

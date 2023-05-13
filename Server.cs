@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Net.Sockets;
 using System.Net;
 
@@ -15,32 +17,45 @@ namespace Server
             _listener = new TcpListener(adress, port);    
         }
 
-        public void StartListen(IClientThreadCreator threadCreator)
+        public CancellationTokenSource token { get; } = new CancellationTokenSource();
+
+        public void StartListen()
         {
-            _started = true;
             _listener.Start();
             Console.WriteLine("ServerStarted");
-            while (_started)
+            while (!token.IsCancellationRequested)
             {
                 var tcpClient = _listener.AcceptTcpClient();
-                Client client = new Client(tcpClient,_clientsCount++,new ByteEchoReader());
-                _clients.Add(client);
-                Console.WriteLine($"Client created with Id {client.Id}");
-                threadCreator.CreateThread(client);
+                CreateClient(tcpClient);
             }
+        }
+
+        private void CreateClient(TcpClient tcpClient)
+        {
+            Client client = new Client(tcpClient);
+            _clients.TryAdd(_clientsCounter,client);
+            StartReadThread(client);
+        }
+
+        private void StartReadThread(Client client)
+        {
+            Thread thread = new Thread(()=>
+            {
+                while(!client.Token.IsCancellationRequested)
+                {
+                    _recievedBytes.Enqueue(client.Read());
+                }
+            });
+            thread.Start();
         }
      
         public void Close()
         {
-            _started = false;
-            foreach(Client client in _clients)
-            {
-                client.Disconnect();
-            }
+          token.Cancel();
         }
-        int _clientsCount = 0;
+        int _clientsCounter = 0;
         private TcpListener _listener;
-        private List<Client> _clients = new List<Client>();
-        private bool _started;
+        private ConcurrentDictionary<int,Client> _clients = new ConcurrentDictionary<int,Client>();
+        private ConcurrentQueue<byte[]> _recievedBytes = new ConcurrentQueue<byte[]>();
     }
 }

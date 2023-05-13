@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Net.Sockets;
 
-namespace Server
+namespace Messages
 {
-    internal interface INetworkReader
+    public class BaseMessage
     {
-        byte[] Read(NetworkStream stream);
+        public int clientId { get; set; }
     }
 }

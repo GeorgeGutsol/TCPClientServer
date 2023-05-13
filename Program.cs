@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Net;
 
 namespace Server
@@ -11,9 +12,10 @@ namespace Server
     {
         static void Main(string[] args)
         {
-            Server server = new Server(IPAddress.Parse("127.0.0.1"),49152);
-            server.StartListen(new ThreadCreator());
+            Server server = new Server(IPAddress.Parse("127.0.0.1"),5201);
+            Console.WriteLine("To end press Enter");
             Console.ReadLine();
+            server.Close();
         }
     }
 }
