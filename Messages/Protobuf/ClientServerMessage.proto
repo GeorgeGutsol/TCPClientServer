@@ -1,18 +1,15 @@
 ﻿syntax = "proto3";
-option csharp_namespace = "ProtobufMessages";
+option csharp_namespace = "Messages.Protobuf";
 import "google/protobuf/timestamp.proto";
-message ServiceInfo {
-	enum OperationType {
+enum OperationType {
 		NEW = 0;
 		RECONNECT = 1;
 		DISCONNECT = 2;
-	}
-	OperationType operation = 1;
 }
 message Data {
 	int32 id = 1;
 	oneof value {
-		ServiceInfo serviceInfo  = 2;
+		OperationType serviceInfo  = 2;
 		string symbol = 3;
 		google.protobuf.Timestamp time = 4;
 	}

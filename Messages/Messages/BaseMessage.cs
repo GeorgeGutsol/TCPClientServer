@@ -8,6 +8,6 @@ namespace Messages
 {
     public class BaseMessage
     {
-        public int clientId { get; set; }
+        public int ClientId { get; set; }
     }
 }

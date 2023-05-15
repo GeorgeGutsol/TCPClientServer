@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Messages.Handlers
 {
-    public interface IHandler
+    public interface IMessageHandler
     {
         BaseMessage Parse(byte[] input);
         byte[] Serialize(BaseMessage message);

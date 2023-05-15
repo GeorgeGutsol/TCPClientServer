@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ProtobufMessages;
+using Messages.Protobuf;
 using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 
 namespace Messages.Handlers
 {
-    public class ProtobufHandler : IHandler
+    public class ProtobufHandler : IMessageHandler
     {
         public BaseMessage Parse(byte[] input)
         {
@@ -19,19 +20,25 @@ namespace Messages.Handlers
                 case Data.ValueOneofCase.Symbol:
                     return new SymbolMessage()
                     {
-                        clientId = data.Id,
+                        ClientId = data.Id,
                         Symbol = data.Symbol
                     };
                 case Data.ValueOneofCase.ServiceInfo:
                     return new ServiceMessage()
                     {
-                        clientId = data.Id,
-                        operation = data.ServiceInfo.Operation
+                        ClientId = data.Id,
+                        Operation = data.ServiceInfo
+                    };
+                case Data.ValueOneofCase.Time:
+                    return new DateTimeMessage
+                    {
+                        ClientId = data.Id,
+                        DateTimeOffset = data.Time.ToDateTimeOffset()
                     };
                 default:
                     return new BaseMessage()
                     {
-                        clientId = data.Id
+                        ClientId = data.Id
                     };
                        
             }
@@ -42,16 +49,19 @@ namespace Messages.Handlers
         {
             Data data = new Data()
             {
-                Id = message.clientId
+                Id = message.ClientId
             };
             switch (message)
             {
                 case ServiceMessage serviceMessage:
-                    data.ServiceInfo.Operation = serviceMessage.operation;
-                    return WriteData(data);
+                    data.ServiceInfo = serviceMessage.Operation;
+                    break;
                 case SymbolMessage symbolMessage:
                     data.Symbol = symbolMessage.Symbol;
-                    return WriteData(data);
+                    break;
+                case DateTimeMessage dateTimeMessage:
+                    data.Time = Timestamp.FromDateTimeOffset(dateTimeMessage.DateTimeOffset);
+                    break;
             }
             return WriteData(data);
         }

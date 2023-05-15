@@ -6,15 +6,15 @@ using System.Threading.Tasks;
 
 namespace Messages
 {
-    public class SymbolMessage:BaseMessage
+    public class DateTimeMessage:BaseMessage
     {
-        public string Symbol { get; set; }
+       public DateTimeOffset DateTimeOffset { get; set; }
 
         public override bool Equals(object obj)
         {
-            if (obj is SymbolMessage message)
+            if (obj is DateTimeMessage message)
             {
-                if (message.Symbol == this.Symbol && message.ClientId == this.ClientId)
+                if (message.DateTimeOffset.Equals(this.DateTimeOffset)&&message.ClientId==this.ClientId)
                 {
                     return true;
                 }

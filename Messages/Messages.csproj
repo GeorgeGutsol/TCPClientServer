@@ -60,8 +60,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Handlers\ProtobufHandler.cs" />
+    <Compile Include="Messages\DateTimeMessage.cs" />
     <Compile Include="Protobuf\ClientServerMessage.cs" />
-    <Compile Include="Handlers\IHandler.cs" />
+    <Compile Include="Handlers\IMessageHandler.cs" />
     <Compile Include="Messages\BaseMessage.cs" />
     <Compile Include="Messages\ServiceMessage.cs" />
     <Compile Include="Messages\SymbolMessage.cs" />
