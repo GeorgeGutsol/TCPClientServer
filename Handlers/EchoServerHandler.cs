@@ -1,5 +1,6 @@
 ﻿using Messages.Handlers;
 using Messages;
+using Messages.Protobuf;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System;
@@ -22,10 +23,8 @@ namespace Server.Handlers
 
         public void Handle(TcpClient tcpClient)
         {
-            Client client = new Client(tcpClient);
-            client.Id = _clientsCounter++;
-            _clients.TryAdd(client.Id, client);
-            StartReadThread(client);
+            Client client = new Client(tcpClient, _clientsCounter++);
+            InitClientThread(client);
         }
         /// <summary>
         /// Обрабатывает полученные сообщения
@@ -35,30 +34,41 @@ namespace Server.Handlers
         private void HandleMessage(object obj,bool timedOut)
         {
             _recievedBytes.TryDequeue(out byte[] data);
-            
+
             switch (MessageHandler.Parse(data))
             {
                 case SymbolMessage symbolMessage:
-                    Console.WriteLine($"ID {symbolMessage.ClientId} send symbol {symbolMessage.Symbol}");
-                    _clients.TryGetValue(0, out var client);
-                    WriteWaitHandler writeHandler = new WriteWaitHandler
-                    {
-                        Client = client,
-                        Message = MessageHandler.Serialize(symbolMessage)
-                    };
-                    writeHandler.RegisteredWaitHandle = ThreadPool.RegisterWaitForSingleObject(client.semaphore,
-                        WriteWaitHandler.Write,
-                        writeHandler,
-                        -1,
-                        true);
+                    HandleSymbolMessage(symbolMessage);
                     break;
+            }
+
+            void HandleSymbolMessage(SymbolMessage symbolMessage)
+            {
+                Console.WriteLine($"ID {symbolMessage.ClientId} send symbol {symbolMessage.Symbol}");
+                if (!_clients.TryGetValue(symbolMessage.ClientId, out var client)) return; 
+                WriteWaitHandler writeHandler = new WriteWaitHandler
+                {
+                    Client = client,
+                    Message = MessageHandler.Serialize(symbolMessage)
+                };
+                writeHandler.CreateWaitHandler();
             }
         }
 
-        private void StartReadThread(Client client)
+        private void InitClientThread(Client client)
         {
             Thread thread = new Thread(() =>
             {
+                client.Semaphore.WaitOne();
+                if (_clients.TryAdd(client.Id, client))
+                {
+                    SendServiceMessage(client, OperationType.New);
+                }
+                else
+                {
+                    SendServiceMessage(client, OperationType.Reconnect);
+                }
+
                 while (!client.Token.IsCancellationRequested)
                 {
                     var message = client.Read();
@@ -69,6 +79,14 @@ namespace Server.Handlers
 
             });
             thread.Start();
+
+        }
+
+
+        private void SendServiceMessage(Client client, OperationType operationType)
+        {
+            var message = MessageHandler.Serialize(new ServiceMessage() { ClientId = client.Id, Operation = operationType});
+            client.SafeWrite(message);
         }
 
         private void EnqueueMessage(byte[] message)

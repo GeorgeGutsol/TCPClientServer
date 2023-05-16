@@ -65,6 +65,7 @@ namespace TestClient
         {
             TcpClient tcpClient = new TcpClient();
             tcpClient.Connect(IPAddress.Parse("127.0.0.1"), 5201);
+            int myId = -1;
             ProtobufHandler protobufHandler = new ProtobufHandler();
             Thread thread = new Thread(()=>
             {
@@ -74,7 +75,16 @@ namespace TestClient
                     int readed = tcpClient.GetStream().Read(buffer, 0, buffer.Length);
                     if (readed == 0) break;
                     Array.Resize(ref buffer, readed);
-                    Console.WriteLine($"Server respond:{((SymbolMessage)protobufHandler.Parse(buffer)).Symbol} ");
+                    switch (protobufHandler.Parse(buffer))
+                    {
+                        case SymbolMessage symbolMessage:
+                            Console.WriteLine($"Server respond:{symbolMessage.Symbol} for client {symbolMessage.ClientId} ");
+                            break;
+                        case ServiceMessage serviceMessage:
+                            Console.WriteLine($"Server send service info:{serviceMessage.Operation.ToString()} for client {serviceMessage.ClientId} ");
+                            myId = serviceMessage.ClientId;
+                            break;
+                    }
                 }
                
 
@@ -87,7 +97,7 @@ namespace TestClient
                     SymbolMessage symbolMessage = new SymbolMessage()
                     {
                         Symbol = s,
-                        ClientId = -1
+                        ClientId = myId
                     };
                     byte[] buffer = protobufHandler.Serialize(symbolMessage);
                     tcpClient.GetStream().Write(buffer, 0, buffer.Length);

@@ -12,12 +12,13 @@ namespace Server
 
         public CancellationTokenSource Token { get; } = new CancellationTokenSource();
 
-        public Semaphore semaphore { get; } = new Semaphore(1, 1);
+        public Semaphore Semaphore { get; } = new Semaphore(1, 1);
 
-        public int Id { get; set; } = -1;
+        public int Id { get; private set; } = -1;
 
-        public Client(TcpClient client)
+        public Client(TcpClient client, int clientId)
         {
+            Id = clientId;
             _client = client;
         }
 
@@ -48,18 +49,23 @@ namespace Server
                 return new byte[0];
             }
         }
-
-        public void Write(byte[] message)
+        /// <summary>
+        /// Безопасный к потокам метод записи в NetworkStream, вызывающий метод должен позаботиться о входе в Client.Semaphore 
+        /// </summary>
+        /// <param name="message"></param>
+        public void SafeWrite(byte[] message)
         {
             _client.GetStream().Write(message, 0, message.Length);
-            semaphore.Release();
+            Semaphore.Release();
         }
 
         public void Disconnect()
         {
+            Semaphore.WaitOne();
             Console.WriteLine($"Client ID {Id} disconnected");
             Token?.Cancel();
             _client.Close();
+            
         }
 
         public void Dispose()
