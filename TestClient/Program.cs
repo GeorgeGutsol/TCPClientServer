@@ -14,10 +14,12 @@ namespace TestClient
 {
     internal class Client
     {
-        public TcpClient tcpClient { get; } = new TcpClient();
+        public TcpClient TcpClient { get; } = new TcpClient();
         public long elapsedTime { get; set; } = 0;
 
         public long nBytes { get; set; } = 0;
+
+        public int ID = -1;
     }
     internal class Program
     {
@@ -38,7 +40,7 @@ namespace TestClient
             for (int i = 0; i < clientCount; i++)
             {
                 var client = new Client();
-                client.tcpClient.Connect(IPAddress.Parse("127.0.0.1"), 5201);
+                client.TcpClient.Connect(IPAddress.Parse("127.0.0.1"), 5201);
                 clients.Add(client);
                 Thread thread = new Thread(() =>
                 {
@@ -53,7 +55,7 @@ namespace TestClient
             Thread.Sleep(200);
             for (int i = 0; i < clientCount; i++)
             {
-                clients[i].tcpClient.Close();
+                clients[i].TcpClient.Close();
                 Console.WriteLine($"Client {i}: {clients[i].nBytes} bytes/{clients[i].elapsedTime} ms");
 
             }
@@ -61,18 +63,52 @@ namespace TestClient
             cancellationToken.Dispose();
         }
 
+        private static void SetSocketKeepAliveValues(TcpClient tcpClient,bool On, int KeepAliveTime, int KeepAliveInterval)
+        {
+
+            byte[] inOptionValues = new byte[sizeof(uint) * 3];
+
+            BitConverter.GetBytes((uint)(On ? 1 : 0)).CopyTo(inOptionValues, 0);
+            BitConverter.GetBytes((uint)KeepAliveTime).CopyTo(inOptionValues, sizeof(uint));
+            BitConverter.GetBytes((uint)KeepAliveInterval).CopyTo(inOptionValues, sizeof(uint) * 2);
+
+            tcpClient.Client.IOControl(IOControlCode.KeepAliveValues, inOptionValues, null);
+        }
+
+        
+
         private static void SymbolSender()
         {
-            TcpClient tcpClient = new TcpClient();
-            tcpClient.Connect(IPAddress.Parse("127.0.0.1"), 5201);
-            int myId = -1;
+            var client = new Client();
+            SetSocketKeepAliveValues(client.TcpClient, true, 1000, 1000);
+            client.TcpClient.Connect(IPAddress.Parse("127.0.0.1"), 5201);
+
             ProtobufHandler protobufHandler = new ProtobufHandler();
-            Thread thread = new Thread(()=>
+            ReadDataAsync(client, protobufHandler);
+            string s;
+            do
+            {
+                s = Console.ReadLine();
+                SymbolMessage symbolMessage = new SymbolMessage()
+                {
+                    Symbol = s,
+                    ClientId = client.ID
+                };
+                byte[] buffer = protobufHandler.Serialize(symbolMessage);
+                client.TcpClient.GetStream().Write(buffer, 0, buffer.Length);
+            }
+            while (!string.IsNullOrEmpty(s));
+            client.TcpClient.Close();
+        }
+
+        private static void CreateReadThread(Client client, ProtobufHandler protobufHandler)
+        {
+            Thread thread = new Thread(() =>
             {
                 while (true)
                 {
-                    var buffer = new byte[tcpClient.ReceiveBufferSize];
-                    int readed = tcpClient.GetStream().Read(buffer, 0, buffer.Length);
+                    var buffer = new byte[client.TcpClient.ReceiveBufferSize];
+                    int readed = client.TcpClient.GetStream().Read(buffer, 0, buffer.Length);
                     if (readed == 0) break;
                     Array.Resize(ref buffer, readed);
                     switch (protobufHandler.Parse(buffer))
@@ -81,34 +117,48 @@ namespace TestClient
                             Console.WriteLine($"Server respond:{symbolMessage.Symbol} for client {symbolMessage.ClientId} ");
                             break;
                         case ServiceMessage serviceMessage:
-                            Console.WriteLine($"Server send service info:{serviceMessage.Operation.ToString()} for client {serviceMessage.ClientId} ");
-                            myId = serviceMessage.ClientId;
+                            Console.WriteLine($"Server send service info:{serviceMessage.Operation} for client {serviceMessage.ClientId} ");
+                            client.ID = serviceMessage.ClientId;
+                            break;
+                        case DateTimeMessage serviceMessage:
+                            Console.WriteLine($"Server send service info:{serviceMessage.DateTimeOffset} for client {serviceMessage.ClientId} ");
                             break;
                     }
                 }
-               
+
 
             });
             thread.Start();
-            string s;
-                do
+        }
+
+        private static async void ReadDataAsync(Client client, ProtobufHandler protobufHandler)
+        {
+
+            while (true)
+            {
+                var buffer = new byte[client.TcpClient.ReceiveBufferSize];
+                int readed = await client.TcpClient.GetStream().ReadAsync(buffer, 0, buffer.Length);
+                if (readed == 0) break;
+                Array.Resize(ref buffer, readed);
+                switch (protobufHandler.Parse(buffer))
                 {
-                    s = Console.ReadLine();
-                    SymbolMessage symbolMessage = new SymbolMessage()
-                    {
-                        Symbol = s,
-                        ClientId = myId
-                    };
-                    byte[] buffer = protobufHandler.Serialize(symbolMessage);
-                    tcpClient.GetStream().Write(buffer, 0, buffer.Length);
+                    case SymbolMessage symbolMessage:
+                        Console.WriteLine($"Server respond:{symbolMessage.Symbol} for client {symbolMessage.ClientId} ");
+                        break;
+                    case ServiceMessage serviceMessage:
+                        Console.WriteLine($"Server send service info:{serviceMessage.Operation} for client {serviceMessage.ClientId} ");
+                        client.ID = serviceMessage.ClientId;
+                        break;
+                    case DateTimeMessage serviceMessage:
+                        Console.WriteLine($"Server send service info:{serviceMessage.DateTimeOffset} for client {serviceMessage.ClientId} ");
+                        break;
                 }
-                while (!string.IsNullOrEmpty(s));
-            tcpClient.Close();
+            }
         }
 
         private static void RandomSend(CancellationTokenSource cancellationToken, Client client)
         {
-            using (var stream = client.tcpClient.GetStream())
+            using (var stream = client.TcpClient.GetStream())
             {
                 Random random = new Random();
                 byte[] buffer = new byte[1000];

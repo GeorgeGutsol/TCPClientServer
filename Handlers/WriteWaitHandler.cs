@@ -13,19 +13,28 @@ namespace Server.Handlers
 
         public void Write(object obj, bool timeOut)
         {
-            if (obj is WriteWaitHandler writeHandler)
-            {
-                writeHandler.Client.SafeWrite(writeHandler.Message);
-                writeHandler.RegisteredWaitHandle.Unregister(null);
-            }
+                Client.SafeWrite(Message);
+                RegisteredWaitHandle.Unregister(null);
         }
         /// <summary>
-        /// Регистрирует ожидание для операции записи 
+        /// Регистрирует ожидание для операции записи методом Write по умолчанию
         /// </summary>
         public void CreateWaitHandler()
         {
             RegisteredWaitHandle = ThreadPool.RegisterWaitForSingleObject(Client.Semaphore,
                    Write,
+                    this,
+                      -1,
+                    true);
+        }
+        /// <summary>
+        /// Регистрирует ожидание для операции записи
+        /// </summary>
+        /// <param name="writeWaitCallback">Custom метод Write</param>
+        public void CreateWaitHandler(WaitOrTimerCallback writeWaitCallback)
+        {
+            RegisteredWaitHandle = ThreadPool.RegisterWaitForSingleObject(Client.Semaphore,
+                   writeWaitCallback,
                     this,
                       -1,
                     true);

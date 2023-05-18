@@ -44,7 +44,7 @@ namespace Server.Handlers
 
             void HandleSymbolMessage(SymbolMessage symbolMessage)
             {
-                Console.WriteLine($"ID {symbolMessage.ClientId} send symbol {symbolMessage.Symbol}");
+                Console.WriteLine($"Server recieved from {symbolMessage}");
                 if (!_clients.TryGetValue(symbolMessage.ClientId, out var client)) return; 
                 WriteWaitHandler writeHandler = new WriteWaitHandler
                 {
@@ -63,11 +63,12 @@ namespace Server.Handlers
                 if (_clients.TryAdd(client.Id, client))
                 {
                     SendServiceMessage(client, OperationType.New);
+            
                 }
-                else
-                {
-                    SendServiceMessage(client, OperationType.Reconnect);
-                }
+                else Console.WriteLine($"Cant add {client.Id}");
+
+                Thread.Sleep(10);//небольшая задержка, чтобы клиент успел получить сервисное сообщение
+                InitClientTimer(client);
 
                 while (!client.Token.IsCancellationRequested)
                 {
@@ -82,11 +83,49 @@ namespace Server.Handlers
 
         }
 
+        /// <summary>
+        /// Отправляет текущее время и инициализирует таймер для отправки времени каждые 10 секунд
+        /// </summary>
+        /// <param name="client"></param>
+        private void InitClientTimer(Client client)
+        {
+            client.Timer = new System.Timers.Timer(10000);
+            client.Timer.Elapsed += (o, e) =>
+            {
+                CreateWriteTimeHandler();
+            };
+            CreateWriteTimeHandler();
+            client.Timer.Start();
+
+            void CreateWriteTimeHandler()
+            {
+                var writeWaitHandler = new WriteWaitHandler();
+                writeWaitHandler.Client = client;
+                writeWaitHandler.CreateWaitHandler(WriteTime);
+            }
+
+            //Определяет время и тут же отправляет его клиенту
+            void WriteTime(object obj,bool elapsed)
+            {
+                if (obj is WriteWaitHandler writeHandler)
+                {
+                    var message = new DateTimeMessage()
+                    {
+                        ClientId = writeHandler.Client.Id,
+                        DateTimeOffset = DateTimeOffset.Now
+                    };
+                    writeHandler.Message = MessageHandler.Serialize(message);
+                    writeHandler.Write(writeHandler, elapsed);
+                    Console.WriteLine($"Server send to {message}");
+                }
+            }            
+        }
 
         private void SendServiceMessage(Client client, OperationType operationType)
         {
-            var message = MessageHandler.Serialize(new ServiceMessage() { ClientId = client.Id, Operation = operationType});
-            client.SafeWrite(message);
+            var message = new ServiceMessage() { ClientId = client.Id, Operation = operationType};
+            client.SafeWrite(MessageHandler.Serialize(message));
+            Console.WriteLine($"Server send to {message}");
         }
 
         private void EnqueueMessage(byte[] message)

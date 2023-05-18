@@ -23,5 +23,10 @@ namespace Messages
             }
             return false;
         }
+
+        public override string ToString()
+        {
+            return $"Client {ClientId} operation {Operation}";
+        }
     }
 }

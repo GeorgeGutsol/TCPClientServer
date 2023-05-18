@@ -14,6 +14,8 @@ namespace Server
 
         public Semaphore Semaphore { get; } = new Semaphore(1, 1);
 
+        public System.Timers.Timer Timer { get; set; }
+
         public int Id { get; private set; } = -1;
 
         public Client(TcpClient client, int clientId)
@@ -38,7 +40,7 @@ namespace Server
             }
             catch (IOException e)
             {
-                if (e.InnerException is SocketException socketException)
+                if (e.InnerException is SocketException)
                 {
                     Disconnect();
                 }
@@ -71,6 +73,18 @@ namespace Server
         public void Dispose()
         {
             Token?.Dispose();
+        }
+
+        public void SetSocketKeepAliveValues(bool On, int KeepAliveTime, int KeepAliveInterval)
+        {
+
+            byte[] inOptionValues = new byte[sizeof(uint) * 3]; 
+
+            BitConverter.GetBytes((uint)(On ? 1 : 0)).CopyTo(inOptionValues, 0);
+            BitConverter.GetBytes((uint)KeepAliveTime).CopyTo(inOptionValues,sizeof(uint));
+            BitConverter.GetBytes((uint)KeepAliveInterval).CopyTo(inOptionValues, sizeof(uint) * 2);
+
+            _client.Client.IOControl(IOControlCode.KeepAliveValues, inOptionValues, null);
         }
     }
 }

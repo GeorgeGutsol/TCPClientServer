@@ -22,5 +22,10 @@ namespace Messages
             }
             return false;
         }
+
+        public override string ToString()
+        {
+            return $"Client {ClientId} time {DateTimeOffset}";
+        }
     }
 }
