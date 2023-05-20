@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Messages.Protobuf;
-using Google.Protobuf;
+﻿using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+using Messages.Protobuf;
 
 namespace Messages.Handlers
 {
@@ -13,7 +8,7 @@ namespace Messages.Handlers
     {
         public BaseMessage Parse(byte[] input)
         {
-            
+
             var data = Data.Parser.ParseFrom(input);
             switch (data.ValueCase)
             {
@@ -40,9 +35,9 @@ namespace Messages.Handlers
                     {
                         ClientId = data.Id
                     };
-                       
+
             }
-                
+
         }
 
         public byte[] Serialize(BaseMessage message)

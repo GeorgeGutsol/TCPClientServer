@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
-using System.Net;
+﻿using Messages.Handlers;
 using Server.Handlers;
-using Messages.Handlers;
+using System;
+using System.Net;
+using System.Threading;
 
 namespace Server
 {
@@ -15,8 +11,9 @@ namespace Server
         static void Main(string[] args)
         {
             var serverHandler = new EchoServerHandler(new ProtobufHandler());
-            Server server = new Server(IPAddress.Parse("127.0.0.1"),5201,serverHandler);
-            server.StartListen();
+            Server server = new Server(IPAddress.Parse("127.0.0.1"), 5201, serverHandler);
+            Thread serverThread = new Thread(server.StartListen);
+            serverThread.Start();
             Console.WriteLine("To end press Enter");
             Console.ReadLine();
             server.Close();

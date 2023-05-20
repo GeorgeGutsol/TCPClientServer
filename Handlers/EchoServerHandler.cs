@@ -1,12 +1,9 @@
-﻿using Messages.Handlers;
-using Messages;
+﻿using Messages;
+using Messages.Handlers;
 using Messages.Protobuf;
+using System;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 
 namespace Server.Handlers
@@ -26,12 +23,21 @@ namespace Server.Handlers
             Client client = new Client(tcpClient, _clientsCounter++);
             InitClientThread(client);
         }
+
+        public void Stop()
+        {
+            foreach (var client in _clients.Values)
+            {
+                client.Disconnect();
+                client.Dispose();
+            }
+        }
         /// <summary>
         /// Обрабатывает полученные сообщения
         /// </summary>
         /// <param name="obj"></param>
         /// <param name="timedOut"></param>
-        private void HandleMessage(object obj,bool timedOut)
+        private void HandleMessage(object obj = null, bool timedOut = false)
         {
             _recievedBytes.TryDequeue(out byte[] data);
 
@@ -40,12 +46,15 @@ namespace Server.Handlers
                 case SymbolMessage symbolMessage:
                     HandleSymbolMessage(symbolMessage);
                     break;
+                case ServiceMessage serviceMessage:
+                    HandleDisconnectMessage(serviceMessage);
+                    break;
             }
 
             void HandleSymbolMessage(SymbolMessage symbolMessage)
             {
-                Console.WriteLine($"Server recieved from {symbolMessage}");
-                if (!_clients.TryGetValue(symbolMessage.ClientId, out var client)) return; 
+                Log.RecieveLog(symbolMessage);
+                if (!_clients.TryGetValue(symbolMessage.ClientId, out var client)) return;
                 WriteWaitHandler writeHandler = new WriteWaitHandler
                 {
                     Client = client,
@@ -53,20 +62,29 @@ namespace Server.Handlers
                 };
                 writeHandler.CreateWaitHandler();
             }
+
+            void HandleDisconnectMessage(ServiceMessage serviceMessage)
+            {
+                Log.RecieveLog(serviceMessage);
+                if (!_clients.TryGetValue(serviceMessage.ClientId, out var client)) return;
+                if (serviceMessage.Operation == OperationType.Disconnect)
+                {
+                    client.Disconnect();
+                    client.Dispose();
+                    _clients.TryRemove(serviceMessage.ClientId, out client);
+                }
+            }
         }
 
+        /// <summary>
+        /// Инициализирует клиентсикй поток на чтение
+        /// </summary>
+        /// <param name="client"></param>
         private void InitClientThread(Client client)
         {
             Thread thread = new Thread(() =>
             {
-                client.Semaphore.WaitOne();
-                if (_clients.TryAdd(client.Id, client))
-                {
-                    SendServiceMessage(client, OperationType.New);
-            
-                }
-                else Console.WriteLine($"Cant add {client.Id}");
-
+                SendServiceMessage(client, OperationType.New);
                 Thread.Sleep(10);//небольшая задержка, чтобы клиент успел получить сервисное сообщение
                 InitClientTimer(client);
 
@@ -76,11 +94,8 @@ namespace Server.Handlers
                     if (message.Length == 0) break;
                     EnqueueMessage(message);
                 }
-                client.Dispose();
-
             });
             thread.Start();
-
         }
 
         /// <summary>
@@ -105,7 +120,7 @@ namespace Server.Handlers
             }
 
             //Определяет время и тут же отправляет его клиенту
-            void WriteTime(object obj,bool elapsed)
+            void WriteTime(object obj, bool elapsed)
             {
                 if (obj is WriteWaitHandler writeHandler)
                 {
@@ -116,23 +131,24 @@ namespace Server.Handlers
                     };
                     writeHandler.Message = MessageHandler.Serialize(message);
                     writeHandler.Write(writeHandler, elapsed);
-                    Console.WriteLine($"Server send to {message}");
+                    Log.SendLog(message);
                 }
-            }            
+            }
         }
 
         private void SendServiceMessage(Client client, OperationType operationType)
         {
-            var message = new ServiceMessage() { ClientId = client.Id, Operation = operationType};
+            client.Semaphore.WaitOne();
+            var message = new ServiceMessage() { ClientId = client.Id, Operation = operationType };
             client.SafeWrite(MessageHandler.Serialize(message));
-            Console.WriteLine($"Server send to {message}");
+            Log.SendLog(message);
         }
 
         private void EnqueueMessage(byte[] message)
         {
             _recievedBytes.Enqueue(message);
             _event.Set();
-            
+
         }
         /// <summary>
         /// Счетчик для формирования Id клиента

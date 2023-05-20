@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="SerializiationTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServerTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

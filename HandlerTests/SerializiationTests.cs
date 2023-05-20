@@ -1,6 +1,6 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Messages;
+﻿using Messages;
 using Messages.Handlers;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
 namespace HandlerTests
@@ -20,7 +20,7 @@ namespace HandlerTests
 
             var serialized = protobufHandler.Serialize(message);
             var deserializedMessage = (SymbolMessage)protobufHandler.Parse(serialized);
-            Assert.AreEqual(message,deserializedMessage);
+            Assert.AreEqual(message, deserializedMessage);
         }
         [TestMethod]
         public void TestServiceMessage()

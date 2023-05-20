@@ -5,14 +5,14 @@ using System.Threading;
 
 namespace Server
 {
-    public class Client:IDisposable
+    public class Client : IDisposable
     {
 
-        private TcpClient _client;
+        public TcpClient TcpClient { get; private set; }
 
-        public CancellationTokenSource Token { get; } = new CancellationTokenSource();
+        public CancellationTokenSource Token { get; private set; } = new CancellationTokenSource();
 
-        public Semaphore Semaphore { get; } = new Semaphore(1, 1);
+        public Semaphore Semaphore { get; private set; } = new Semaphore(1, 1);
 
         public System.Timers.Timer Timer { get; set; }
 
@@ -21,7 +21,7 @@ namespace Server
         public Client(TcpClient client, int clientId)
         {
             Id = clientId;
-            _client = client;
+            TcpClient = client;
         }
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace Server
             byte[] readBuffer = new byte[8192];
             try
             {
-                int readed = _client.GetStream().Read(readBuffer, 0, readBuffer.Length);
+                int readed = TcpClient.GetStream().Read(readBuffer, 0, readBuffer.Length);
                 if (readed == 0) Disconnect();
                 Array.Resize(ref readBuffer, readed);
                 return readBuffer;
@@ -57,34 +57,63 @@ namespace Server
         /// <param name="message"></param>
         public void SafeWrite(byte[] message)
         {
-            _client.GetStream().Write(message, 0, message.Length);
-            Semaphore.Release();
+            try
+            {
+                TcpClient.GetStream().Write(message, 0, message.Length);
+            }
+            catch (Exception e)
+            {
+                if (e.InnerException is SocketException)
+                {
+                    Disconnect();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            finally
+            {
+                Semaphore.Release();
+            }
         }
 
         public void Disconnect()
         {
-            Semaphore.WaitOne();
             Console.WriteLine($"Client ID {Id} disconnected");
+
+            Timer.Stop();
+
+            Semaphore?.WaitOne();
+            Semaphore?.Close();
+
             Token?.Cancel();
-            _client.Close();
-            
+            TcpClient?.Close();
         }
 
         public void Dispose()
         {
             Token?.Dispose();
+            Timer?.Dispose();
+        }
+
+        public void Reconnect(Client client)
+        {
+            TcpClient = client.TcpClient;
+            Semaphore = client.Semaphore;
+            Token.Dispose();
+            Token = client.Token;
         }
 
         public void SetSocketKeepAliveValues(bool On, int KeepAliveTime, int KeepAliveInterval)
         {
-
-            byte[] inOptionValues = new byte[sizeof(uint) * 3]; 
+            byte[] inOptionValues = new byte[sizeof(uint) * 3];
 
             BitConverter.GetBytes((uint)(On ? 1 : 0)).CopyTo(inOptionValues, 0);
-            BitConverter.GetBytes((uint)KeepAliveTime).CopyTo(inOptionValues,sizeof(uint));
+            BitConverter.GetBytes((uint)KeepAliveTime).CopyTo(inOptionValues, sizeof(uint));
             BitConverter.GetBytes((uint)KeepAliveInterval).CopyTo(inOptionValues, sizeof(uint) * 2);
 
-            _client.Client.IOControl(IOControlCode.KeepAliveValues, inOptionValues, null);
+            TcpClient.Client.IOControl(IOControlCode.KeepAliveValues, inOptionValues, null);
         }
     }
 }

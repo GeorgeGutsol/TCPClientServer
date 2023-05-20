@@ -1,19 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Concurrent;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
-using System.Net.Sockets;
+﻿using Server.Handlers;
+using System;
 using System.Net;
-using Server.Handlers;
+using System.Net.Sockets;
+using System.Threading;
 
 namespace Server
 {
     internal class Server
     {
-        
+
         public Server(IPAddress adress, int port, IServerHandler serverHandler)
         {
             _listener = new TcpListener(adress, port);
@@ -32,10 +27,11 @@ namespace Server
                 handler.Handle(tcpClient);
             }
         }
-     
+
         public void Close()
         {
             _listener.Stop();
+            handler.Stop();
             token.Cancel();
             token.Dispose();
         }

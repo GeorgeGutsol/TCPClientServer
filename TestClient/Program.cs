@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net.Sockets;
-using System.Net;
-using System.Threading;
-using System.Diagnostics;
-using Messages;
+﻿using Messages;
 using Messages.Handlers;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
 
 namespace TestClient
 {
@@ -23,7 +21,7 @@ namespace TestClient
     }
     internal class Program
     {
-        
+
         static void Main(string[] args)
         {
             SymbolSender();
@@ -63,7 +61,7 @@ namespace TestClient
             cancellationToken.Dispose();
         }
 
-        private static void SetSocketKeepAliveValues(TcpClient tcpClient,bool On, int KeepAliveTime, int KeepAliveInterval)
+        private static void SetSocketKeepAliveValues(TcpClient tcpClient, bool On, int KeepAliveTime, int KeepAliveInterval)
         {
 
             byte[] inOptionValues = new byte[sizeof(uint) * 3];
@@ -75,7 +73,7 @@ namespace TestClient
             tcpClient.Client.IOControl(IOControlCode.KeepAliveValues, inOptionValues, null);
         }
 
-        
+
 
         private static void SymbolSender()
         {

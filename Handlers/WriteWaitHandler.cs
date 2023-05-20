@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 
 namespace Server.Handlers
 {
@@ -13,19 +14,37 @@ namespace Server.Handlers
 
         public void Write(object obj, bool timeOut)
         {
+            try
+            {
                 Client.SafeWrite(Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected exception: {ex.Message}");
+            }
+            finally
+            {
                 RegisteredWaitHandle.Unregister(null);
+            }
         }
         /// <summary>
         /// Регистрирует ожидание для операции записи методом Write по умолчанию
         /// </summary>
         public void CreateWaitHandler()
         {
-            RegisteredWaitHandle = ThreadPool.RegisterWaitForSingleObject(Client.Semaphore,
-                   Write,
-                    this,
-                      -1,
-                    true);
+            try
+            {
+                RegisteredWaitHandle = ThreadPool.RegisterWaitForSingleObject(Client.Semaphore,
+               Write,
+                this,
+                  -1,
+                true);
+            }
+            catch (ObjectDisposedException)
+            {
+                Console.WriteLine($"Client semaphore disposed before wait registration");
+            }
+
         }
         /// <summary>
         /// Регистрирует ожидание для операции записи
@@ -33,11 +52,18 @@ namespace Server.Handlers
         /// <param name="writeWaitCallback">Custom метод Write</param>
         public void CreateWaitHandler(WaitOrTimerCallback writeWaitCallback)
         {
-            RegisteredWaitHandle = ThreadPool.RegisterWaitForSingleObject(Client.Semaphore,
+            try
+            {
+                RegisteredWaitHandle = ThreadPool.RegisterWaitForSingleObject(Client.Semaphore,
                    writeWaitCallback,
                     this,
                       -1,
                     true);
+            }
+            catch (ObjectDisposedException)
+            {
+                Console.WriteLine($"Client semaphore disposed before wait registration");
+            }
         }
     }
 }
