@@ -85,6 +85,7 @@ namespace Server.Handlers
             Thread thread = new Thread(() =>
             {
                 SendServiceMessage(client, OperationType.New);
+                _clients.TryAdd(client.Id, client);
                 Thread.Sleep(10);//небольшая задержка, чтобы клиент успел получить сервисное сообщение
                 InitClientTimer(client);
 
