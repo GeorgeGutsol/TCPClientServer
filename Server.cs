@@ -23,8 +23,21 @@ namespace Server
             Console.WriteLine("ServerStarted");
             while (!token.IsCancellationRequested)
             {
-                var tcpClient = _listener.AcceptTcpClient();
-                handler.Handle(tcpClient);
+                try
+                {
+                    var tcpClient = _listener.AcceptTcpClient();
+                    handler.Handle(tcpClient);
+                }
+                catch (InvalidOperationException)
+                {
+                    Console.WriteLine("Слушатель завершил свою работу");
+                }
+                catch (SocketException)
+                {
+                    Console.WriteLine("Ошибка слушающего сокета");
+                }
+                
+               
             }
         }
 

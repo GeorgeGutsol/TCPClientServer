@@ -77,9 +77,10 @@ namespace Server
                 Semaphore.Release();
             }
         }
-
+        bool disconnected = false;
         public void Disconnect()
         {
+            if (disconnected) return;
             Console.WriteLine($"Client ID {Id} disconnected");
 
             Timer.Stop();
@@ -89,6 +90,7 @@ namespace Server
 
             Token?.Cancel();
             TcpClient?.Close();
+            disconnected = true;
         }
 
         public void Dispose()
@@ -105,15 +107,6 @@ namespace Server
             Token = client.Token;
         }
 
-        public void SetSocketKeepAliveValues(bool On, int KeepAliveTime, int KeepAliveInterval)
-        {
-            byte[] inOptionValues = new byte[sizeof(uint) * 3];
-
-            BitConverter.GetBytes((uint)(On ? 1 : 0)).CopyTo(inOptionValues, 0);
-            BitConverter.GetBytes((uint)KeepAliveTime).CopyTo(inOptionValues, sizeof(uint));
-            BitConverter.GetBytes((uint)KeepAliveInterval).CopyTo(inOptionValues, sizeof(uint) * 2);
-
-            TcpClient.Client.IOControl(IOControlCode.KeepAliveValues, inOptionValues, null);
-        }
+ 
     }
 }

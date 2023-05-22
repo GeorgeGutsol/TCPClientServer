@@ -86,7 +86,7 @@ namespace Server.Handlers
             {
                 SendServiceMessage(client, OperationType.New);
                 _clients.TryAdd(client.Id, client);
-                Thread.Sleep(10);//небольшая задержка, чтобы клиент успел получить сервисное сообщение
+                Thread.Sleep(20);//небольшая задержка, чтобы клиент успел получить сервисное сообщение
                 InitClientTimer(client);
 
                 while (!client.Token.IsCancellationRequested)

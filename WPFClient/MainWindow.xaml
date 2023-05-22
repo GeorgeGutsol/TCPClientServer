@@ -66,11 +66,10 @@
                 Margin="5,5,5,5"
                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
                 materialDesign:HintAssist.Hint="Протокол соединения"
-                AcceptsReturn="True"
                 TextWrapping="Wrap"
                 IsReadOnly="True"
                 VerticalScrollBarVisibility="Auto" 
-                Text="{Binding Client.MessageLog, Mode=OneWay}"
+                Text="{Binding Client.ConnectionLog, Mode=OneWay}"
                 Grid.Column="1"
                 SelectionBrush="Black"/>
 
@@ -78,13 +77,12 @@
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
                 Margin="5,5,5,5"
-                IsEnabled="False"
                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
                 materialDesign:HintAssist.Hint="Протокол принятых сообщений"
-                AcceptsReturn="True"
                 TextWrapping="Wrap"
                 IsReadOnly="True"
-                VerticalScrollBarVisibility="Auto" 
+                VerticalScrollBarVisibility="Auto"
+                Text="{Binding Client.MessageLog, Mode=OneWay}"
                 Grid.Column="1" Grid.Row="1"/>
     </Grid>
 </Window>
