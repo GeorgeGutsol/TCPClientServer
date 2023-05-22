@@ -15,7 +15,7 @@ namespace Server
             var IP = ConfigurationManager.AppSettings["IP"];
             if (string.IsNullOrEmpty(IP) || !IPAddress.TryParse(IP, out IPAddress address)) address = IPAddress.Parse("127.0.0.1");
             var configPort = ConfigurationManager.AppSettings["Port"];
-            if (string.IsNullOrEmpty(configPort) || !int.TryParse(IP, out int port)) port = 5201;
+            if (string.IsNullOrEmpty(configPort) || !int.TryParse(configPort, out int port)) port = 5201;
             Server server = new Server(address, port, serverHandler);
             Console.WriteLine($"Server started on {address}:{port}");
             Thread serverThread = new Thread(server.StartListen);
