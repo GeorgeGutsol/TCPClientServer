@@ -90,7 +90,7 @@ namespace WPFClient
         private const int maxRequests = 120;
         private int requests = maxRequests;
         /// <summary>
-        /// Пытается установить соединение 
+        /// Пытается установить соединение maxRequest раз
         /// </summary>
         /// <returns></returns>
         private async Task ConnectAsync()

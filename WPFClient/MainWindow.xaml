@@ -43,7 +43,22 @@
                          Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                          Text="{Binding Path=Client.Port, UpdateSourceTrigger=PropertyChanged}"/>
             </WrapPanel>
-            <Button Grid.Row="1" Content="{Binding ConnectButtonText }" Background="{Binding ConnectButtonColor,Mode=OneWay }" Command="{Binding ConnectCommand}"/>
+            <Button Grid.Row="1" Foreground ="White" Command="{Binding ConnectCommand}" BorderThickness="0">
+                <Button.Style>
+                    <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedSecondaryButton}">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Client.IsConnected}" Value="True">
+                                <Setter Property="Background" Value="Red"/>
+                                <Setter Property="Content" Value="Отключиться"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding Client.IsConnected}" Value="False">
+                                <Setter Property="Background" Value="Green"/>
+                                <Setter Property="Content" Value="Подключиться"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
 
         </Grid>
 

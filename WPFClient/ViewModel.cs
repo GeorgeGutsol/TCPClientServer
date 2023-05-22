@@ -17,24 +17,6 @@ namespace WPFClient
     {
         public Client Client { get; }
 
-        private SolidColorBrush _connectButtonColor = new SolidColorBrush(Colors.Green);
-
-        public SolidColorBrush ConnectButtonColor
-        {
-            get { return _connectButtonColor; }
-        }
-
-        private string _connectButtonText="Подключиться";
-        public string ConnectButtonText
-        {
-            get { return _connectButtonText; }
-            set 
-            { 
-                _connectButtonText = value;
-                OnPropertyChanged();
-            }
-        }
-
         public ViewModel()
         {
             Client = new Client();
@@ -51,8 +33,6 @@ namespace WPFClient
                         () =>
                         {
                             Client.IsConnected = !Client.IsConnected;
-                            ConnectButtonColor.Color =Client.IsConnected?Colors.Red:Colors.Green;
-                            ConnectButtonText = Client.IsConnected ?  "Отключиться": "Подключиться";
                         },
                         () =>
                         {
